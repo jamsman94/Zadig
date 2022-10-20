@@ -313,7 +313,7 @@ const (
 	AuthorizationHeader = "Authorization"
 )
 
-//install script constants
+// install script constants
 const (
 	StandardScriptName   = "install.sh"
 	AllInOneScriptName   = "install_with_k8s.sh"
@@ -329,7 +329,7 @@ const (
 	StatusSucceeded = "Succeeded"
 )
 
-//build image consts
+// build image consts
 const (
 	// BuildImageJob ...
 	BuildImageJob = "docker-build"
@@ -701,4 +701,10 @@ const (
 const (
 	ProductWorkflowType = "product_workflow"
 	CustomWorkflowType  = "common_workflow"
+)
+
+// deploy image source
+const (
+	ImageSourceZadig  = "zadig"
+	ImageSourceCustom = "custom"
 )

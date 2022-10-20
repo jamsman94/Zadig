@@ -2,15 +2,77 @@ package workflow
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/koderover/zadig/pkg/microservice/aslan/config"
 	commonmodels "github.com/koderover/zadig/pkg/microservice/aslan/core/common/repository/models"
 	commonrepo "github.com/koderover/zadig/pkg/microservice/aslan/core/common/repository/mongodb"
 	commonservice "github.com/koderover/zadig/pkg/microservice/aslan/core/common/service"
 	jobctl "github.com/koderover/zadig/pkg/microservice/aslan/core/workflow/service/workflow/job"
+	"github.com/koderover/zadig/pkg/microservice/systemconfig/core/codehost/repository/mongodb"
+	"github.com/koderover/zadig/pkg/setting"
 	e "github.com/koderover/zadig/pkg/tool/errors"
 	"go.uber.org/zap"
 )
+
+// CreateProductWorkflowTask creates a task for product workflow with user-friendly inputs, this is only for
+// OpenAPI for now.
+func CreateProductWorkflowTask(username string, args *OpenAPICreateProductWorkflowTaskArgs, log *zap.SugaredLogger) (*CreateTaskResp, error) {
+	createTaskArgs, err := PresetWorkflowArgs(args.EnvName, args.WorkflowName, log)
+	if err != nil {
+		presetErr := fmt.Errorf("failed to get the required information to start a workflow, error: %s", err)
+		return nil, presetErr
+	}
+
+	// buildEnabled means we have build & deploy stage
+	if args.BuildEnabled {
+		newTargetList := make([]*commonmodels.TargetArgs, 0)
+		for _, target := range createTaskArgs.Target {
+			for _, svc := range args.ServiceDetail {
+				// if the service match
+				if svc.ServiceName == target.ServiceName && svc.ServiceModule == target.ImageName {
+					for _, repo := range svc.BuildInfo.RepoInfo {
+						repoInfo, err := mongodb.NewCodehostColl().GetCodeHostByAlias(repo.CodeHostName)
+						if err != nil {
+							return nil, errors.New("failed to find code host with name:" + repo.CodeHostName)
+						}
+
+						for _, buildRepo := range target.Build.Repos {
+							if buildRepo.CodehostID == repoInfo.ID {
+								if buildRepo.RepoNamespace == repo.RepoNamespace && buildRepo.RepoName == repo.RepoName {
+									buildRepo.Branch = repo.Branch
+									buildRepo.PR = repo.PR
+								}
+							}
+						}
+					}
+
+					// if deploy is enabled
+					if svc.DeployEnabled && svc.DeployInfo.ImageSource == setting.ImageSourceZadig {
+						deployInfo := make([]commonmodels.DeployEnv, 0)
+						deployInfo = append(deployInfo, commonmodels.DeployEnv{
+							Env: fmt.Sprintf("%s/%s", svc.ServiceName, svc.ServiceModule),
+							// Fixme: currently using the preset response as value, change it to normal when we have time
+							Type:        target.Deploy[0].Type,
+							ProductName: target.Deploy[0].ProductName,
+						})
+
+						target.Deploy = deployInfo
+					}
+
+					newTargetList = append(newTargetList, target)
+				}
+			}
+		}
+		createTaskArgs.Target = newTargetList
+	} else {
+		// otherwise we have a deploy-only stage
+		for _, svc := range args.ServiceDetail {
+
+		}
+	}
+
+}
 
 // CreateCustomWorkflowTask creates a task for custom workflow with user-friendly inputs, this is currently
 // used for openAPI

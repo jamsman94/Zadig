@@ -13,6 +13,29 @@ import (
 	"github.com/koderover/zadig/pkg/tool/log"
 )
 
+func CreateProductWorkflowTask(c *gin.Context) {
+	ctx := internalhandler.NewContext(c)
+	defer func() { internalhandler.JSONResponse(c, ctx) }()
+
+	args := new(workflowservice.OpenAPICreateProductWorkflowTaskArgs)
+	data, err := c.GetRawData()
+	if err != nil {
+		log.Errorf("CreateProductWorkflowTask c.GetRawData() err : %s", err)
+	}
+	if err = json.Unmarshal(data, args); err != nil {
+		log.Errorf("CreateProductWorkflowTask json.Unmarshal err : %s", err)
+	}
+
+	c.Request.Body = io.NopCloser(bytes.NewBuffer(data))
+
+	if err := c.ShouldBindJSON(&args); err != nil {
+		ctx.Err = e.ErrInvalidParam.AddDesc(err.Error())
+		return
+	}
+
+	ctx.Resp, ctx.Err = workflowservice.CreateProductWorkflowTask(ctx.UserName, args, ctx.Logger)
+}
+
 func CreateCustomWorkflowTask(c *gin.Context) {
 	ctx := internalhandler.NewContext(c)
 	defer func() { internalhandler.JSONResponse(c, ctx) }()

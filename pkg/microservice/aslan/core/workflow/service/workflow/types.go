@@ -27,6 +27,47 @@ import (
 	steptypes "github.com/koderover/zadig/pkg/types/step"
 )
 
+type OpenAPICreateProductWorkflowTaskArgs struct {
+	ProjectName   string                       `json:"project_name"`
+	EnvName       string                       `json:"env_name"`
+	WorkflowName  string                       `json:"workflow_name"`
+	BuildEnabled  bool                         `json:"build_enabled"`
+	ServiceDetail []*ServiceBuildAndDeployInfo `json:"service_detail"`
+}
+
+type ServiceBuildAndDeployInfo struct {
+	DeployEnabled bool             `json:"deploy_enabled"`
+	ServiceModule string           `json:"service_module"`
+	ServiceName   string           `json:"service_name"`
+	BuildInfo     *ZadigBuildInfo  `json:"build_info,omitempty"`
+	DeployInfo    *ZadigDeployInfo `json:"deploy_info,omitempty"`
+}
+
+type ZadigBuildInfo struct {
+	RepoInfo []*RepoInput `json:"repo_info"`
+	Inputs   []*KV        `json:"inputs"`
+}
+
+type DeploySource string
+
+const (
+	ImageSourceUser  DeploySource = "user"
+	ImageSourceBuild DeploySource = "zadig"
+)
+
+func (c DeploySource) Validate() bool {
+	if c == ImageSourceUser || c == ImageSourceBuild {
+		return true
+	}
+
+	return false
+}
+
+type ZadigDeployInfo struct {
+	ImageSource DeploySource `json:"image_source"`
+	ImageName   string       `json:"image_name"`
+}
+
 type WorkflowV3 struct {
 	ID          string                   `json:"id"`
 	Name        string                   `json:"name"`
