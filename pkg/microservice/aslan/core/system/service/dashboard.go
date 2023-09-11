@@ -19,6 +19,7 @@ package service
 import (
 	"fmt"
 	"github.com/koderover/zadig/pkg/shared/client/user"
+	"github.com/koderover/zadig/pkg/types"
 	"math"
 	"net/http"
 	"strings"
@@ -175,7 +176,7 @@ type allowedProjectsData struct {
 	Result []string `json:"result"`
 }
 
-func GetMyWorkflow(header http.Header, username, userID, cardID string, log *zap.SugaredLogger) ([]*WorkflowResponse, error) {
+func GetMyWorkflow(header http.Header, username, userID, cardID string, isAdmin bool, log *zap.SugaredLogger) ([]*WorkflowResponse, error) {
 	resp := make([]*WorkflowResponse, 0)
 
 	cfg, err := commonrepo.NewDashboardConfigColl().GetByUser(username, userID)
@@ -190,11 +191,16 @@ func GetMyWorkflow(header http.Header, username, userID, cardID string, log *zap
 	}
 
 	// determine the allowed project
-	projects, _, err := user.New().ListAuthorizedProjectsByResourceAndVerb(userID, "workflow", "get_workflow")\
-	if err != nil {
-		log.Errorf("failed to list available project for workflows, error: %s", err)
-		return nil, err
+	projects := make([]string, 0)
+	if !isAdmin {
+		authorizedProject, _, err := user.New().ListAuthorizedProjectsByResourceAndVerb(userID, "workflow", types.WorkflowActionView)
+		if err != nil {
+			log.Errorf("failed to list available project for workflows, error: %s", err)
+			return nil, err
+		}
+		projects = authorizedProject
 	}
+
 	workflowList, err := workflow.ListAllAvailableWorkflows(projects, log)
 	if err != nil {
 		log.Errorf("failed to list all available workflows, error: %s", err)
