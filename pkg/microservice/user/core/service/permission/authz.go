@@ -63,6 +63,15 @@ func GetUserAuthInfo(uid string, logger *zap.SugaredLogger) (*AuthorizedResource
 		groupIDList = append(groupIDList, group.GroupID)
 	}
 
+	allUserGroup, err := orm.GetAllUserGroup(tx)
+	if err != nil || allUserGroup.GroupID == "" {
+		tx.Rollback()
+		logger.Errorf("failed to find user group for %s, error: %s", "所有用户", err)
+		return nil, fmt.Errorf("failed to find user group for %s, error: %s", "所有用户", err)
+	}
+
+	groupIDList = append(groupIDList, allUserGroup.GroupID)
+
 	// generate system actions for user
 	systemActions := generateDefaultSystemActions()
 	// we generate a map of namespaced(project) permission
@@ -343,6 +352,15 @@ func ListAuthorizedProjectByVerb(uid, resource, verb string, logger *zap.Sugared
 		logger.Errorf("failed to find user group for user: %s, error: %s", uid, err)
 		return nil, fmt.Errorf("failed to get user permission, cannot find the user group for user, error: %s", err)
 	}
+
+	allUserGroup, err := orm.GetAllUserGroup(tx)
+	if err != nil || allUserGroup.GroupID == "" {
+		tx.Rollback()
+		logger.Errorf("failed to find user group for %s, error: %s", "所有用户", err)
+		return nil, fmt.Errorf("failed to find user group for %s, error: %s", "所有用户", err)
+	}
+
+	groupIDList = append(groupIDList, allUserGroup.GroupID)
 
 	for _, group := range groups {
 		groupIDList = append(groupIDList, group.GroupID)
