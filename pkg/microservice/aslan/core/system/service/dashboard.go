@@ -18,6 +18,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/koderover/zadig/pkg/shared/client/user"
 	"math"
 	"net/http"
 	"strings"
@@ -189,26 +190,11 @@ func GetMyWorkflow(header http.Header, username, userID, cardID string, log *zap
 	}
 
 	// determine the allowed project
-	rules := []*rule{{
-		method:   "/api/aslan/workflow/workflow",
-		endpoint: "GET",
-	}}
-
-	var res [][]string
-	for _, v := range rules {
-		allowedProjects := &allowedProjectsData{}
-		opaClient := opa.NewDefault()
-		err := opaClient.Evaluate("rbac.user_allowed_projects", allowedProjects, func() (*opa.Input, error) {
-			return generateOPAInput(header, v.method, v.endpoint), nil
-		})
-		if err != nil {
-			log.Errorf("opa evaluation failed, err: %s", err)
-			return nil, err
-		}
-		res = append(res, allowedProjects.Result)
+	projects, _, err := user.New().ListAuthorizedProjectsByResourceAndVerb(userID, "workflow", "get_workflow")\
+	if err != nil {
+		log.Errorf("failed to list available project for workflows, error: %s", err)
+		return nil, err
 	}
-
-	projects := intersect(res)
 	workflowList, err := workflow.ListAllAvailableWorkflows(projects, log)
 	if err != nil {
 		log.Errorf("failed to list all available workflows, error: %s", err)
