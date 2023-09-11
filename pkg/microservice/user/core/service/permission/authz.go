@@ -273,6 +273,15 @@ func ListAuthorizedProject(uid string, logger *zap.SugaredLogger) ([]string, err
 		groupIDList = append(groupIDList, group.GroupID)
 	}
 
+	allUserGroup, err := orm.GetAllUserGroup(tx)
+	if err != nil || allUserGroup.GroupID == "" {
+		tx.Rollback()
+		logger.Errorf("failed to find user group for %s, error: %s", "所有用户", err)
+		return nil, fmt.Errorf("failed to find user group for %s, error: %s", "所有用户", err)
+	}
+
+	groupIDList = append(groupIDList, allUserGroup.GroupID)
+
 	roles, err := orm.ListRoleByUID(uid, tx)
 	if err != nil {
 		tx.Rollback()
