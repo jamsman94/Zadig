@@ -199,6 +199,8 @@ func GetMyWorkflow(header http.Header, username, userID, cardID string, isAdmin 
 			return nil, err
 		}
 		projects = authorizedProject
+	} else {
+		projects = append(projects, "*")
 	}
 
 	workflowList, err := workflow.ListAllAvailableWorkflows(projects, log)
