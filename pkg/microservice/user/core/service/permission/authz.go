@@ -353,6 +353,10 @@ func ListAuthorizedProjectByVerb(uid, resource, verb string, logger *zap.Sugared
 		return nil, fmt.Errorf("failed to get user permission, cannot find the user group for user, error: %s", err)
 	}
 
+	for _, group := range groups {
+		groupIDList = append(groupIDList, group.GroupID)
+	}
+
 	allUserGroup, err := orm.GetAllUserGroup(tx)
 	if err != nil || allUserGroup.GroupID == "" {
 		tx.Rollback()
@@ -361,10 +365,6 @@ func ListAuthorizedProjectByVerb(uid, resource, verb string, logger *zap.Sugared
 	}
 
 	groupIDList = append(groupIDList, allUserGroup.GroupID)
-
-	for _, group := range groups {
-		groupIDList = append(groupIDList, group.GroupID)
-	}
 
 	roles, err := orm.ListRoleByUIDAndVerb(uid, verb, tx)
 	if err != nil {
