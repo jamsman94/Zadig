@@ -22,6 +22,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/koderover/zadig/v2/pkg/tool/log"
 	"github.com/koderover/zadig/v2/pkg/util"
 	"go.uber.org/zap"
 
@@ -90,8 +91,8 @@ func RenderWorkflowVariables(projectKey, workflowName, variableType, jobName, va
 }
 
 const (
-	SpecialVariableService       = "$SERVICE_NAME"
-	SpecialVariableServiceModule = "$SERVICE_MODULE"
+	SpecialVariableService       = `$SERVICE_NAME`
+	SpecialVariableServiceModule = `$SERVICE_MODULE`
 )
 
 var SpecialVariableInputMap = map[string]string{
@@ -125,6 +126,7 @@ func renderScriptedVariableOptions(script, callFunction string, userInput map[st
 func parseCallFuncWithSpecialVariables(callFunction string, userInput map[string]string) string {
 	resp := callFunction
 	for specialVarKey, specialVarUserInputKey := range SpecialVariableInputMap {
+		log.Infof("replacing %s with %s", specialVarKey, userInput[specialVarUserInputKey])
 		resp = strings.ReplaceAll(resp, specialVarKey, userInput[specialVarUserInputKey])
 	}
 
