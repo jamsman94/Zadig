@@ -125,6 +125,8 @@ func renderScriptedVariableOptions(script, callFunction string, userInput map[st
 
 func parseCallFuncWithSpecialVariables(callFunction string, userInput map[string]string) string {
 	resp := callFunction
+	log.Infof("1")
+	log.Infof("size of the special map is: %d", len(SpecialVariableInputMap))
 	for specialVarKey, specialVarUserInputKey := range SpecialVariableInputMap {
 		log.Infof("replacing %s with %s", specialVarKey, userInput[specialVarUserInputKey])
 		resp = strings.ReplaceAll(resp, specialVarKey, userInput[specialVarUserInputKey])
